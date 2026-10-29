@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>共享动效 · 气泡与手绘人物</title>
+<link rel="stylesheet" href="chat-bubbles.css"><link rel="stylesheet" href="thinking-person.css">
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f2f1eb;color:#172522;font-family:'Microsoft YaHei',Arial,sans-serif}main{max-width:1440px;margin:0 auto;padding:36px}h1{font-size:32px;margin:0 0 14px}p{margin:0 0 24px;color:#526b60;font-size:17px}.stage{width:100%;aspect-ratio:1368/650;position:relative;overflow:hidden;border-radius:20px;background:#172522}.canvas{position:absolute;width:1368px;height:650px;transform-origin:0 0}#chat{position:absolute;left:28px;top:35px}#person{position:absolute;left:940px;top:65px}.controls{display:flex;gap:18px;align-items:center;margin-top:24px}button{background:#16816c;color:#fff;border:0;padding:11px 22px;border-radius:8px;font:inherit;cursor:pointer}input{flex:1;accent-color:#16816c}output{font-variant-numeric:tabular-nums;width:80px}a{color:#16816c}.note{margin-top:18px;font-size:14px}
+</style></head><body><main><h1>逐条聊天 · 手绘思考人物</h1><p>拖动进度可前进或回退；新消息出现时，前面的气泡向上推。</p><div class="stage"><div class="canvas"><div id="chat"></div><div id="person"></div></div></div><div class="controls"><button id="toggle">播放</button><input id="time" type="range" min="0" max="10" step="0.01" value="5.4" aria-label="时间（秒）"><output id="readout">5.40 s</output></div><p class="note">组件本身没有自动时钟；本页的播放按钮负责把时间传入 seek(seconds)。<a href="README.md">接口与来源</a></p></main>
+<script src="chat-bubbles.js"></script><script src="thinking-person.js"></script><script>
+const chat = MotionComponents.createChatBubbles('#chat', {
+  width: 900, height: 580, title: '协作记录', fontSize: 34, avatarSize: 72,
+  messages: [
+    {id:'brief',side:'self',text:'请整理这份资料。',at:.5},
+    {id:'received',side:'friend',text:'任务已收到。',at:1.8},
+    {id:'edit',side:'self',text:'重点部分再清楚一些。',at:3.2},
+    {id:'done',side:'friend',text:'修改完成，可以查看了。',at:4.8},
+    {id:'thanks',side:'self',text:'好的，先停一会儿。',at:7.3}
+  ]
+});
+const person = MotionComponents.createThinkingPerson('#person', {width:400,sighAt:6.5});
+const slider=document.querySelector('#time'), readout=document.querySelector('#readout'), button=document.querySelector('#toggle');
+let playing=false, previous=null, current=5.4;
+window.seekDemo=function(t){current=Math.max(0,Math.min(10,Number(t)));slider.value=current;readout.textContent=current.toFixed(2)+' s';return {chat:chat.seek(current),person:person.seek(current)}};
+function resize(){document.querySelector('.canvas').style.transform='scale('+document.querySelector('.stage').clientWidth/1368+')';seekDemo(current)}
+new ResizeObserver(resize).observe(document.querySelector('.stage'));
+slider.addEventListener('input',()=>{playing=false;button.textContent='播放';seekDemo(slider.value)});
+button.addEventListener('click',()=>{playing=!playing;if(playing&&current>=10)seekDemo(0);button.textContent=playing?'暂停':'播放';previous=null});
+function tick(now){if(playing&&previous!==null){seekDemo(current+(now-previous)/1000);if(current>=10){playing=false;button.textContent='播放'}}previous=now;requestAnimationFrame(tick)}
+document.fonts.ready.then(()=>{resize();requestAnimationFrame(tick)});
+</script></body></html>
